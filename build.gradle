@@ -31,6 +31,9 @@ targetCompatibility = 1.8
 
 repositories {
     mavenLocal()
+    maven {
+	    url "http://nexus.navent.biz:8081/nexus/content/groups/public/"
+    }
     mavenCentral()
 }
 
@@ -39,7 +42,7 @@ ext {
     slf4j_version = '1.7.25'
     logback_version = '1.2.3'
     kafka_version = '2.1.1'
-    elasticsearch_version = '6.6.0'
+    elasticsearch_version = '7.1.1'
 }
 
 configurations.all {
@@ -111,37 +114,32 @@ artifacts {
 
 publishing {
     publications {
-        MyPublication(MavenPublication) {
+        maven(MavenPublication) {
             from components.java
             groupId 'org.elasticsearch.kafka.indexer'
             artifactId 'kafka-elasticsearch-consumer'
             version project.version
         }
+        create('tar', MavenPublication) {
+            artifact distTar
+            groupId 'org.elasticsearch.kafka.indexer'
+            artifactId 'kafka-elasticsearch-consumer'
+            version project.version
+        }
+    }
+    repositories {
+        maven {
+        	credentials {
+                username deployment
+                password n4v3ntd3v
+            }
+            def releasesRepoUrl = "http://nexus.navent.biz:8081/nexus/content/repositories/snapshots/"
+            def snapshotsRepoUrl = "http://nexus.navent.biz:8081/nexus/content/repositories/releases/"
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+        }
     }
 }
 
-bintray {
-    //dryRun = true
-    user = artifact_provider_user
-    key = artifact_provider_secret
-    publications = ['MyPublication']
-    publish = true
-    pkg {
-        repo = 'bigdatadevs-repo'
-        name = 'org.elasticsearch.kafka.indexer:kafka-elasticsearch-consumer'
-        userOrg = artifact_provider_org
-        licenses = ['Apache-2.0']
-        vcsUrl = artifact_provider_url
-        version {
-            name = project.version
-            desc = 'Current version'
-            released  = new Date()
-            vcsTag = '0.0.2'
-            attributes = ['gradle-plugin': 'com.use.less:com.use.less.gradle:gradle-useless-plugin']
-        }
-    }
-    configurations = ['archives']
-}
 run {
     // support passing -Dsystem.property=value to bootRun task
     systemProperties = System.properties
