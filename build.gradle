@@ -18,7 +18,6 @@ apply plugin: 'docker'
 
 
 group = 'org.elasticsearch.kafka.indexer'
-version = release + '.' + build
 mainClassName = "org.elasticsearch.kafka.indexer.KafkaESIndexerProcess"
 
 description = "kafka-elasticsearch-consumer"
@@ -119,22 +118,17 @@ publishing {
             groupId 'org.elasticsearch.kafka.indexer'
             artifactId 'kafka-elasticsearch-consumer'
             version project.version
-        }
-        create('tar', MavenPublication) {
-            artifact distTar
-            groupId 'org.elasticsearch.kafka.indexer'
-            artifactId 'kafka-elasticsearch-consumer'
-            version project.version
-        }
+			artifact(distTar.archivePath)        
+		}
     }
     repositories {
         maven {
         	credentials {
-                username deployment
-                password n4v3ntd3v
+                username "deployment"
+                password "n4v3ntd3v"
             }
-            def releasesRepoUrl = "http://nexus.navent.biz:8081/nexus/content/repositories/snapshots/"
-            def snapshotsRepoUrl = "http://nexus.navent.biz:8081/nexus/content/repositories/releases/"
+            def snapshotsRepoUrl = "http://nexus.navent.biz:8081/nexus/content/repositories/snapshots/"
+            def releasesRepoUrl = "http://nexus.navent.biz:8081/nexus/content/repositories/releases/"
             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
         }
     }
