@@ -1,4 +1,0 @@
-cluster.name: KafkaESCluster
-path.data: /data/data
-path.logs: /data/log
-path.plugins: /data/plugins
