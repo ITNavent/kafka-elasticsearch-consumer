@@ -56,7 +56,6 @@
     </logger>
   
 	<root level="INFO">
-		<appender-ref ref="STDOUT" />
 		<appender-ref ref="MAIN_LOGS" />
 	</root>
 
