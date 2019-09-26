@@ -27,6 +27,7 @@ import org.elasticsearch.kafka.indexer.configuration.KafkaConsumerConfiguration;
 import org.elasticsearch.kafka.indexer.service.IMessageHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -47,7 +48,7 @@ public class ConsumerManager {
     private KafkaConsumerConfiguration kafkaConsumerConfiguration;
     
     @Autowired
-    private IMessageHandler messageHandler;
+    private ObjectFactory<IMessageHandler> messageHandlerObjectFactory;
 
 
     private ExecutorService consumersThreadPool = null;
@@ -81,7 +82,7 @@ public class ConsumerManager {
         for (int consumerNumber = 0; consumerNumber < consumerPoolCount; consumerNumber++) {
 			ConsumerWorker consumer = new ConsumerWorker(consumerNumber, kafkaConsumerConfiguration.getClient(),
 					kafkaConsumerConfiguration.getTopic(), kafkaProperties,
-					kafkaConsumerConfiguration.getPollInterval(), messageHandler);
+					kafkaConsumerConfiguration.getPollInterval(), messageHandlerObjectFactory.getObject());
             consumers.add(consumer);
             consumersThreadPool.submit(consumer);
         }
