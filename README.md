@@ -13,7 +13,7 @@ Main changes from original version:
 
 # Introduction
 
-### **Kafka Standalone Consumer [Indexer] will read messages from Kafka, in batches, process and bulk-index them into ElasticSearch.**
+**Kafka Standalone Consumer [Indexer] will read messages from Kafka, in batches, process and bulk-index them into ElasticSearch.**
 
 
 # How to use ? 
@@ -53,25 +53,36 @@ You must configure the following properties
 
 ### Kafka consumer config
 **kafka.consumer.topic** with kafka topic name
+
 **kafka.consumer.group** with kafka group id
+
 **kafka.consumer.client** with kafka client name
+
 **kafka.consumer.brokers** with kafka broker list
 
 ### ElasticSearch config
 **elasticsearch.hosts** with elasticsearch hosts list
+
 **elasticsearch.cluster-name** with elasticsearch cluster name
+
 **elasticsearch.index-name** with elasticsearch index name (on lowercase)
 
 ## Aditionals properties
 You can also configure:
 
 **kafka.consumer.start-option** The value of this property can be `RESTART`, `EARLIEST`, `LATEST`. By default `RESTART` option is used for all partitions.
+
 **kafka.consumer.partitions** kafka consumer partitions are threads to consume the topic. By default 20
+
 **kafka.consumer.session-timeout** The timeout used to detect consumer failures in ms. By default 10000
+
 **kafka.consumer.poll-interval** Interval in MS to poll Kafka brokers for messages. By default 10000
+
 **kafka.consumer.max-partition-fetch-bytes** Max number of bytes to fetch in one poll request PER partition. By default 1048576
 
+
 **elasticsearch.indexing-retry-sleep-time** sleep time in ms between attempts to index data into ES again. By default 10000
+
 **elasticsearch.number-of-indexing-retry-attempts** number of times to try to index data into ES if ES cluster is not reachable. By default 2
 
 # License
