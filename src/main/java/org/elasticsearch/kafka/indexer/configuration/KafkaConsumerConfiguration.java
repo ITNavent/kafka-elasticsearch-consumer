@@ -22,7 +22,6 @@ public class KafkaConsumerConfiguration {
 
     private String startOption = "RESTART";
 
-
     private int partitions = 20;
     
     private int sessionTimeout = 10000 ;
