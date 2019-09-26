@@ -17,7 +17,7 @@ public class ElasticSearchConfiguration {
 	@NotNull
 	private String indexName;
 
-	private String indexType = "varnish";
+	private String indexType = "kafkaESType";
 
     // sleep time in ms between attempts to index data into ES again
     private int indexingRetrySleepTime = 10000;
