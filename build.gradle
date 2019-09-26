@@ -1,63 +1,41 @@
 buildscript {
-    repositories { jcenter() }
-    dependencies {
-        classpath 'se.transmode.gradle:gradle-docker:1.2'
+	ext { springBootVersion = '2.1.6.RELEASE' }
+    repositories {
+        mavenCentral()
     }
+    dependencies { classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}") }
 }
-plugins {
-    id "com.jfrog.bintray" version "1.3.1"
-    id "com.jfrog.artifactory" version "4.0.0"
-}
+
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
-apply plugin: 'jacoco'
 apply plugin: 'maven-publish'
-apply plugin: 'application'
-apply plugin: 'docker'
 
 
 group = 'org.elasticsearch.kafka.indexer'
-mainClassName = "org.elasticsearch.kafka.indexer.KafkaESIndexerProcess"
-
-description = "kafka-elasticsearch-consumer"
-def artifact_provider_url       = hasProperty('artifact_provider_url') ? artifact_provider_url : System.getenv('artifact_provider_url')
-def artifact_provider_user      = hasProperty('artifact_provider_user') ? artifact_provider_user : System.getenv('artifact_provider_user')
-def artifact_provider_org       = hasProperty('artifact_provider_org') ? artifact_provider_org : System.getenv('artifact_provider_org')
-def artifact_provider_secret    = hasProperty('artifact_provider_secret') ? artifact_provider_secret : System.getenv('artifact_provider_secret')
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
     mavenLocal()
     maven {
-	    url "http://nexus.navent.biz:8081/nexus/content/groups/public/"
+        url "http://nexus.navent.biz:8081/nexus/content/groups/public/"
     }
     mavenCentral()
 }
 
 ext {
-    spring_version = '4.3.8.RELEASE'
-    slf4j_version = '1.7.25'
-    logback_version = '1.2.3'
-    kafka_version = '2.1.1'
-    elasticsearch_version = '7.1.1'
+    kafka_version = '1.0.2'
+    elasticsearch_version = '6.6.0'
+	set('elasticsearch.version', '6.6.0')
 }
 
-configurations.all {
-    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-        if (details.requested.name == 'log4j') {
-            // https://mvnrepository.com/artifact/org.slf4j/log4j-over-slf4j
-            details.useTarget "org.slf4j:log4j-over-slf4j:$slf4j_version"
-        }
-        if (details.requested.name == 'commons-logging') {
-            // https://mvnrepository.com/artifact/org.slf4j/jcl-over-slf4j
-            details.useTarget "org.slf4j:jcl-over-slf4j:$slf4j_version"
-        }
-    }
-}
 
 dependencies {
+	compile("org.springframework.boot:spring-boot-starter")
     // https://mvnrepository.com/artifact/org.elasticsearch/elasticsearch
     compile group: 'org.elasticsearch', name: 'elasticsearch', version: elasticsearch_version
     // https://mvnrepository.com/artifact/org.elasticsearch.client/transport
@@ -66,36 +44,26 @@ dependencies {
     compile group: 'org.apache.kafka', name: 'kafka-clients', version: kafka_version
     // https://mvnrepository.com/artifact/com.google.guava/guava
     compile group: 'com.google.guava', name: 'guava', version: '19.0'
+	
+	compile group: 'javax.validation', name: 'validation-api', version: '2.0.0.Final'
 
-    // https://mvnrepository.com/artifact/org.springframework/
-    compile group: 'org.springframework', name: 'spring-core', version: spring_version
-    compile group: 'org.springframework', name: 'spring-context', version: spring_version
 
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    compile group: 'org.slf4j', name: 'slf4j-api', version: slf4j_version
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
     // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-to-slf4j
     compile group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: '2.8.2'
-    // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
-    compile group: 'ch.qos.logback', name: 'logback-core', version: logback_version
-    // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-    compile group: 'ch.qos.logback', name: 'logback-classic', version: logback_version
-    // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
+
+	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
 
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
-    testCompile group: 'org.springframework', name: 'spring-test', version: spring_version
+    testCompile("org.springframework.boot:spring-boot-starter-test")
 }
 
-processResources {
-    filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: [version: project.version])
-}
 
 jar {
-    exclude ("config")
     manifest {
         attributes(
-                "Implementation-Title": rootProject.name,
+                "Implementation-Title": 'Kafka Elasticsearch',
                 "Implementation-Version": version,
                 "Build-Time": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         )
@@ -118,7 +86,9 @@ publishing {
             groupId 'org.elasticsearch.kafka.indexer'
             artifactId 'kafka-elasticsearch-consumer'
             version project.version
-			artifact(distTar.archivePath)        
+			artifact sourcesJar {
+				classifier "sources"
+			}   
 		}
     }
     repositories {
@@ -132,21 +102,4 @@ publishing {
             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
         }
     }
-}
-
-run {
-    // support passing -Dsystem.property=value to bootRun task
-    systemProperties = System.properties
-}
-docker {
-    baseImage = 'java:8'
-}
-
-task createDockerContainer(type: Docker, dependsOn: distTar) {
-    //project.group = 'bigdatadevs'
-    applicationName = project.name
-    addFile (tasks.distTar.archivePath, "/opt/")
-    addFile ("src/test/resources","/opt/conf/")
-    setEnvironment("JAVA_OPTS", "-Dindexer.properties=/opt/conf/kafka-es-indexer-docker.properties -Dlogback.configurationFile=/opt/conf/logback.xml");
-    entryPoint(["/opt/${tasks.distTar.baseName}-${tasks.distTar.version}/bin/${tasks.distTar.baseName}"])
 }

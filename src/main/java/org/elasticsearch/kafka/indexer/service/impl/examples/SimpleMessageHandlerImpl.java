@@ -4,12 +4,15 @@
  */
 package org.elasticsearch.kafka.indexer.service.impl.examples;
 
+import org.elasticsearch.kafka.indexer.configuration.ElasticSearchConfiguration;
 import org.elasticsearch.kafka.indexer.exception.IndexerESNotRecoverableException;
 import org.elasticsearch.kafka.indexer.exception.IndexerESRecoverableException;
 import org.elasticsearch.kafka.indexer.service.ElasticSearchBatchService;
 import org.elasticsearch.kafka.indexer.service.IMessageHandler;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Service;
 
 /**
  * 
@@ -17,14 +20,15 @@ import org.springframework.beans.factory.annotation.Value;
  * and using the ElasticSearchBatchService to delegate most of the non-customized logic
  *
  */
+@Service
+@Scope(value = BeanDefinition.SCOPE_PROTOTYPE)
 public class SimpleMessageHandlerImpl implements IMessageHandler {
 
 	@Autowired
 	private ElasticSearchBatchService elasticSearchBatchService = null;
-	@Value("${elasticsearch.index.name:my_index}")
-	private String indexName;
-	@Value("${elasticsearch.index.type:varnish}")
-	private String indexType;
+	
+	@Autowired
+	private ElasticSearchConfiguration esConfiguration;
 
 	@Override
 	public String transformMessage(String inputMessage, Long offset) throws Exception {
@@ -37,7 +41,7 @@ public class SimpleMessageHandlerImpl implements IMessageHandler {
 		String eventUUID = null; // we don't need a UUID for this simple scenario
 		String routingValue = null; // we don't need routing for this simple scenario		
 		elasticSearchBatchService.addEventToBulkRequest(
-				inputMessage, indexName, indexType, eventUUID, routingValue);
+				inputMessage, esConfiguration.getIndexName(), esConfiguration.getIndexType(), eventUUID, routingValue);
 	}
 
 	@Override

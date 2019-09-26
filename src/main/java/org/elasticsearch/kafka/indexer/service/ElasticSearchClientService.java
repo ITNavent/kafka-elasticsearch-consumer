@@ -1,7 +1,6 @@
 package org.elasticsearch.kafka.indexer.service;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -13,48 +12,39 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.kafka.indexer.configuration.ElasticSearchConfiguration;
 import org.elasticsearch.kafka.indexer.exception.IndexerESNotRecoverableException;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
  * Created by dhyan on 8/31/15.
  */
-// TODO convert to a singleton Spring ES service when ready
 @Service
 public class ElasticSearchClientService {
 
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchClientService.class);
     public static final String CLUSTER_NAME = "cluster.name";
 
-    @Value("${elasticsearch.cluster.name:elasticsearch}")
-    private String esClusterName;
-    @Value("#{'${elasticsearch.hosts.list:localhost:9300}'.split(',')}")
-    private List<String> esHostPortList;
-    // sleep time in ms between attempts to index data into ES again
-    @Value("${elasticsearch.indexing.retry.sleep.ms:10000}")
-    private   int esIndexingRetrySleepTimeMs;
-    // number of times to try to index data into ES if ES cluster is not reachable
-    @Value("${elasticsearch.indexing.retry.attempts:2}")
-    private   int numberOfEsIndexingRetryAttempts;
+    @Autowired
+    private ElasticSearchConfiguration esConfiguration;
 
     // TODO add when we can inject partition number into each bean
-	//private int currentPartition;
 	private TransportClient esTransportClient;
 
     @PostConstruct
     public void init() throws Exception {
     	logger.info("Initializing ElasticSearchClient ...");
         // connect to elasticsearch cluster
-        Settings settings = Settings.builder().put(CLUSTER_NAME, esClusterName).build();
+        Settings settings = Settings.builder().put(CLUSTER_NAME, esConfiguration.getClusterName()).build();
         try {
         	
         	//new PreBuiltTransportClient(
             esTransportClient  = new PreBuiltTransportClient(settings);
-            for (String eachHostPort : esHostPortList) {
+            for (String eachHostPort : esConfiguration.getHosts()) {
                 logger.info("adding [{}] to TransportClient ... ", eachHostPort);
                 String[] hostPortTokens = eachHostPort.split(":");
                 if (hostPortTokens.length < 2) 
@@ -85,8 +75,8 @@ public class ElasticSearchClientService {
     }
     
 	public void reInitElasticSearch() throws InterruptedException, IndexerESNotRecoverableException {
-		for (int i=1; i<=numberOfEsIndexingRetryAttempts; i++ ){
-			Thread.sleep(esIndexingRetrySleepTimeMs);
+		for (int i=1; i<=esConfiguration.getNumberOfIndexingRetryAttempts(); i++ ){
+			Thread.sleep(esConfiguration.getIndexingRetrySleepTime());
 			//logger.warn("Re-trying to connect to ES, partition {}, try# {}", currentPartition, i);
 			logger.warn("Re-trying to connect to ES, try# {}", i);
 			try {
@@ -94,7 +84,7 @@ public class ElasticSearchClientService {
 				// we succeeded - get out of the loop
 				return;
 			} catch (Exception e) {
-				if (i<numberOfEsIndexingRetryAttempts){
+				if (i<esConfiguration.getNumberOfIndexingRetryAttempts()){
 					//logger.warn("Re-trying to connect to ES, partition {}, try# {} - failed again: {}", 
 					//		currentPartition, i, e.getMessage());						
 					logger.warn("Re-trying to connect to ES, try# {} - failed again: {}", 
