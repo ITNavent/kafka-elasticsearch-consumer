@@ -29,8 +29,8 @@ repositories {
 
 ext {
     kafka_version = '1.0.2'
-    elasticsearch_version = '6.6.0'
-	set('elasticsearch.version', '6.6.0')
+    elasticsearch_version = '7.1.1'
+	set('elasticsearch.version', '7.1.1')
 }
 
 
